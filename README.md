@@ -5,7 +5,7 @@
 
   <br />
 
-  <!-- 🪐 LOGO (Depoya yüklediğin logo.png burada otomatik olarak açılacaktır) -->
+  <!-- 🪐 LOGO (Depondaki logo.png) -->
   <a href="https://github.com/CahitProjects">
     <img src="logo.png" alt="Cahit Projects" width="150" style="border-radius: 28px; border: 1px solid rgba(255, 255, 255, 0.15);" />
   </a>
@@ -46,7 +46,7 @@
     <a href="#-sistem-mimarisi-ve-akış-şeması"><b>Mimari Şema</b></a> •
     <a href="#-çekirdek-kod-uygulaması"><b>Çekirdek Kod</b></a> •
     <a href="#-sistem-konsolu-ve-telemetri"><b>Konsol</b></a> •
-    <a href="#-geliştirilen-sistemler-kataloğu"><b>Projeler</b></a> •
+    <a href="#-temel-uzmanlık-alanlarımız"><b>Uzmanlıklar</b></a> •
     <a href="#-performans-ve-kıyaslama-matrisi"><b>Performans</b></a> •
     <a href="#-teknoloji-yığını"><b>Altyapı</b></a> •
     <a href="#-telif-hakkı-ve-kullanım-şartları"><b>Telif & Lisans</b></a> •
@@ -61,26 +61,25 @@
 
 ## 📌 Genel Bakış ve Felsefe
 
-**Cahit Projects**, Discord API ekosistemleri ve dağıtık ağlar üzerinde çalışan kurumsal seviyede bot altyapıları, milisaniyelik soket izleyicileri ve yüksek performanslı masaüstü sistem araçları geliştiren bağımsız bir yazılım çekirdeğidir.
+**Cahit Projects**, modern ağlar ve gerçek zamanlı API ekosistemleri üzerinde çalışan kurumsal seviyede bot altyapıları, milisaniyelik soket otomasyonları ve yüksek performanslı sistem araçları geliştiren bağımsız bir yazılım çekirdeğidir.
 
-Modern bot ve otomasyon projelerinde yaşanan en büyük üç kronik sorun şunlardır:
-1. **Bellek Sızıntısı (Memory Leaks):** Uzun süre açık kalan Node.js süreçlerinin şişmesi ve sunucuyu kilitlemesi.
-2. **Çökme ve Veri Kaybı (Crash & Unhandled Rejections):** Beklenmedik bir WebSocket kopmasında botların tamamen durması.
-3. **Rate-Limit ve IP Blokajı:** Tek bir IP adresi üzerinden aşırı istek gönderildiğinde Discord Cloudflare engeline takılma.
+Temel odağımız; görsel şişirmelerden uzak, bellek sızıntısı yapmayan, 7/24 kesintisiz çalışabilen ve yoğun eşzamanlı istekleri en düşük CPU/RAM tüketimiyle işleyen dayanıklı kod tabanları inşa etmektir.
 
-Cahit Projects mimarisi, bu sorunları kökten çözmek için **İzole İş Parçacığı Havuzu (Worker Pools)**, **Akıllı SOCKS5 Proxy Zinciri** ve **Sıfır Gecikmeli Nöbetçi (Watchdog Guard)** protokolleri üzerine kurulmuştur.
+* **İzole İş Parçacıkları:** Süreçlerin birbirini kilitlemesini önleyen çoklu worker havuzları.
+* **Sıfır Gecikmeli Watchdog:** Olası bağlantı kopmalarında botu veri kaybı olmadan anında ayağa kaldıran koruma.
+* **Akıllı Proxy Yönlendirmesi:** IP ban ve hız sınırlaması (rate-limit) risklerini ortadan kaldıran dinamik ağ zinciri.
 
 ---
 
 ## 🏗️ Sistem Mimarisi ve Akış Şeması
 
-Aşağıdaki şema, Cahit Projects bot ve otomasyon çekirdeğinin veri akışını, çökme korumasını ve soket dağıtımını göstermektedir:
+Aşağıdaki şema, geliştirdiğimiz çekirdek motorların veri akışını, çökme korumasını ve soket dağıtımını göstermektedir:
 
 ```mermaid
 graph TD
     Client[İstemci / Web Panel / Masaüstü Arayüzü] -->|REST / WebSocket| Master[Master Orchestrator]
     
-    subgraph Core Engine [Cahit Projects Dağıtık Çekirdek]
+    subgraph Core Engine [Dağıtık Çekirdek Motoru]
         Master --> Worker1[Worker Shard #01]
         Master --> Worker2[Worker Shard #02]
         Master --> WorkerN[Worker Shard #N]
@@ -90,22 +89,22 @@ graph TD
         Watchdog -.->|İzle ve Onar| WorkerN
     end
     
-    subgraph Network Layer [Ağ ve Güvenlik Havuzu]
+    subgraph Network Layer [Ağ ve Güvenlik Katmanı]
         Worker1 --> ProxyPool[Dinamik SOCKS5 / HTTP Proxy Havuzu]
         Worker2 --> ProxyPool
         WorkerN --> ProxyPool
         ProxyPool --> TokenVault[Şifreli Token & Kimlik Kasası]
     end
     
-    ProxyPool -->|Rate-Limit Korumalı İstekler| DiscordAPI[Discord Gateway / REST API]
-    DiscordAPI -->|Anlık Yanıt| WebhookAlerts[Discord Webhook & Telemetri Logları]
+    ProxyPool -->|Rate-Limit Korumalı İstekler| TargetAPI[Hedef Gateway / REST API]
+    TargetAPI -->|Anlık Yanıt| WebhookAlerts[Webhook Bildirimleri & Telemetri]
 ```
 
 ---
 
 ## 💻 Çekirdek Kod Uygulaması
 
-Sistemlerimizin kalbinde yer alan izole iş parçacığı yönetimi, rate-limit aşım engelleme ve kendi kendini onaran nöbetçi motorunun tam teşekküllü TypeScript mimari örneği:
+Geliştirdiğimiz altyapılarda kullanılan izole worker yönetimi, dinamik proxy rotasyonu ve kendi kendini onaran nöbetçi motorunun tipik mimari örneği:
 
 ```typescript
 import { WorkerCluster, ProxyRotator, WatchdogGuard, TokenVault } from '@cahit-projects/core';
@@ -146,11 +145,11 @@ const orchestrator = new WorkerCluster({
   vault: vault
 });
 
-// 4. Dağıtık Sistemi Başlat ve Soketleri Canlıya Al
+// 4. Dağıtık Sistemi Başlat
 async function bootstrapEcosystem(): Promise<void> {
   console.log('[Kernel] Cahit Projects Çekirdek Başlatılıyor...');
   await orchestrator.bootstrap();
-  console.log(`[Kernel] 16 Shard başarıyla bağlandı. Gateway gecikmesi: <5ms`);
+  console.log('[Kernel] 16 Shard başarıyla bağlandı. Gateway gecikmesi: <5ms');
 }
 
 bootstrapEcosystem().catch((err) => {
@@ -171,9 +170,9 @@ bootstrapEcosystem().catch((err) => {
 │  [+] [IDENTITY]      Organization: Cahit Projects                                        │
 │  [+] [COMMUNITY]     Gateway: discord.gg/cahit [WebSockets: SYNCHRONIZED]               │
 │  [+] [BROADCAST]     Official Transmission: YouTube/@cahitgergin                         │
-│  [+] [DISCORD ENGINE] Multi-Worker Gateway Sharding: [16 WORKER SHARDS READY]             │
-│  [+] [SHIELD PROTOCOL] Watchdog Guard, Memory Vault & Crash Sentinel: ACTIVE (0ms Loss) │
-│  [+] [INFRASTRUCTURE] Python AsyncIO Engine + Node.js High-Throughput Cluster: ONLINE   │
+│  [+] [ENGINE STATUS] Multi-Worker Gateway Sharding: [16 WORKER SHARDS READY]             │
+│  [+] [SHIELD GUARD]  Watchdog Guard, Memory Vault & Crash Sentinel: ACTIVE (0ms Loss)   │
+│  [+] [ASYNC ENGINE]  Python AsyncIO Engine + Node.js High-Throughput Cluster: ONLINE     │
 │  [+] [PROXY MESH]    Round-Robin SOCKS5 Matrix: 100% HEALTHY (Latency: 3.8ms)            │
 │                                                                                          │
 │  >> STATUS: ALL SYSTEM NODES REPORTING 100% NOMINAL. ZERO-DAY RESILIENT. ⚡             │
@@ -182,45 +181,41 @@ bootstrapEcosystem().catch((err) => {
 
 ---
 
-## 🚀 Geliştirilen Sistemler Kataloğu
+## 🎯 Temel Uzmanlık Alanlarımız
 
-Projelerimiz yerel optimizasyon ve güvenlik denetimleri tamamlandıkça bu organizasyon altında sürümlenecektir:
+Henüz yayınlanmamış projeler yerine, yazılım ekibimizin uzmanlaştığı ve geliştirdiği temel alanlar:
 
-### 1. Multi Discord Manager (Enterprise Edition)
-* **Temel Amacı:** Onlarca Discord botunu ve kullanıcı oturumunu tek bir panelden, birbirinden tamamen izole worker thread'ler ile yönetmek.
-* **Teknik Detaylar:**
-  * Bellek sızıntılarını önleyen izole bellek kum havuzu (sandbox).
-  * Proxy rotasyonu sayesinde hesapların birbirine bağlanmasını engelleyen IP yalıtımı.
-  * Beklenmedik bağlantı kopmalarında 0 milisaniye veri kaybıyla kendini yeniden başlatan nöbetçi döngü.
-* **Teknoloji Yığını:** `Node.js 20+`, `Electron`, `Discord.js v14`, `Tailwind CSS`.
+<details open>
+  <summary><b>1. Yüksek Eşzamanlılıklı Bot Mimarileri (Tıkla ve Aç)</b></summary>
+  <br/>
+  <blockquote>
+    Onlarca bot ve kullanıcı oturumunu tek bir merkezden izole iş parçacıklarıyla (worker threads) yönetme, bellek sızıntılarını önleme ve 7/24 kesintisiz soket bağlantısı sağlama uzmanlığı.
+  </blockquote>
+</details>
 
----
+<details open>
+  <summary><b>2. Milisaniyelik Soket Otomasyonları ve Dinleyiciler (Tıkla ve Aç)</b></summary>
+  <br/>
+  <blockquote>
+    Python AsyncIO ve asenkron soket kütüphaneleri ile mikro saniyeler seviyesinde veri dinleme, webhook tetikleyicileri ve hız sınırı (rate-limit) atlatma sistemleri.
+  </blockquote>
+</details>
 
-### 2. High-Frequency Vanity & Identifier Sentinel
-* **Temel Amacı:** Hedef sunucu linkleri (vanity URL) veya kullanıcı adlarının durumunu milisaniyelik aralıklarla denetleyen yüksek hızlı soket motoru.
-* **Teknik Detaylar:**
-  * Python `AsyncIO` ve `AIOHTTP` ile sıfır işlemci darboğazı.
-  * Eşzamanlı multi-channel istek motoru ile rate-limit havuz optimizasyonu.
-  * Hedef boşa düştüğü mikrosaniyede otomatik Discord Webhook bildirimi ve zengin loglama.
-* **Teknoloji Yığını:** `Python 3.12`, `AsyncIO`, `AIOHTTP`, `Discord Webhooks`.
+<details open>
+  <summary><b>3. Vektörel Veri ve Dinamik Render Servisleri (Tıkla ve Aç)</b></summary>
+  <br/>
+  <blockquote>
+    Kullanıcı profilleri, istatistikler ve rozetleri yüksek çözünürlüklü SVG formatında işleyen mikroservis ve REST API altyapıları.
+  </blockquote>
+</details>
 
----
-
-### 3. Vector Badges & Identity REST API
-* **Temel Amacı:** Discord kullanıcı profillerini, rozetlerini ve aktivitelerini ultra yüksek çözünürlüklü vektörel SVG formatında render eden mikroservis.
-* **Teknik Detaylar:**
-  * Redis/Bellek içi önbellekleme ile 10 milisaniyenin altında yanıt süresi.
-  * Vektörel SVG işleme motoru ile kayıpsız ölçekleme ve koyu tema paneli.
-* **Teknoloji Yığını:** `TypeScript`, `Express`, `Canvas/SVG Render Engine`.
-
----
-
-### 4. Cyber DevTools & Desktop Automation
-* **Temel Amacı:** Geliştiricilerin sistem süreçlerini izleyen, bellek sızıntılarını denetleyen ve tek tıkla geliştirme ortamı kuran taşınabilir script kütüphanesi.
-* **Teknik Detaylar:**
-  * Bağımsız ve hafif kabuk betikleri.
-  * Süreç izleyici ve Dockerize edilmiş dağıtım paketleri.
-* **Teknoloji Yığını:** `PowerShell`, `Bash Shell`, `Docker`.
+<details open>
+  <summary><b>4. Masaüstü ve Sistem Monitör Araçları (Tıkla ve Aç)</b></summary>
+  <br/>
+  <blockquote>
+    Geliştiricilerin arka plan süreçlerini denetleyen, bellek kullanımını takip eden ve ortam kurulumlarını otomatikleştiren hafif masaüstü çözümleri.
+  </blockquote>
+</details>
 
 ---
 
@@ -267,7 +262,7 @@ Altyapı      : Docker • Linux CLI • Redis Caching • SOCKS5 Proxy Networks
 > 2. **Paylaşım ve Tanıtım İzni:**  
 >    Projelerimizi YouTube, Discord veya başka platformlarda paylaşmak, videolarda kullanmak veya tanıtımını yapmak isteyenlerin **önceden e-posta yoluyla yazılı izin alması zorunludur**.
 > 3. **Yasal Süreç ve DMCA Yaptırımı:**  
->    İzinsiz kod kopyalama, tersine mühendislik (reverse engineering) veya hak ihlali tespit edildiğinde, hiçbir ihtara gerek kalmaksızın doğrudan **GitHub DMCA (Dijital Binyıl Telif Hakkı Yasası)** kapsamında yasal süreç başlatılır ve ihlal eden depolar derhal kapattırılır.
+>    İzinsiz kod kopyalama, tersine mühendislik veya hak ihlali tespit edildiğinde, hiçbir ihtara gerek kalmaksızın doğrudan **GitHub DMCA (Dijital Binyıl Telif Hakkı Yasası)** kapsamında yasal süreç başlatılır ve ihlal eden depolar derhal kapattırılır.
 > 
 > *Resmi izin ve lisans talepleri için:* **[cahitprojectsofficial@gmail.com](mailto:cahitprojectsofficial@gmail.com?subject=Cahit%20Projects%20-%20Kullanım%20ve%20Paylaşım%20Talebi)**
 
@@ -281,11 +276,11 @@ Altyapı      : Docker • Linux CLI • Redis Caching • SOCKS5 Proxy Networks
 
 ## 🗺️ 2026 Geliştirme Yol Haritası
 
-- [x] **Q1 2026:** Çekirdek Discord bot orkestrasyonu ve token havuz kütüphanesinin tamamlanması
-- [x] **Q1 2026:** Multi Discord Manager v1.0 yerel stres testleri ve bellek yalıtımı
-- [ ] **Q2 2026:** Discord Badges API canlı web servisinin açık kaynak olarak yayına alınması
-- [ ] **Q2 2026:** Yüksek frekanslı otomatik denetleyici ve analiz araçlarının GitHub'a dağıtımı
-- [ ] **Q3 2026:** Bulut tabanlı çoklu bot yönetim konsolu ve web paneli
+- [x] **Q1 2026:** Çekirdek bot orkestrasyonu ve token havuz kütüphanesinin tamamlanması
+- [x] **Q1 2026:** Dağıtık soket motorunun yerel stres testleri ve bellek yalıtımı
+- [ ] **Q2 2026:** İlk açık kaynak bot ve araçların GitHub depolarına yüklenmesi
+- [ ] **Q2 2026:** Dinamik web servislerinin ve profil API'lerinin yayına alınması
+- [ ] **Q3 2026:** Bulut tabanlı çoklu yönetim konsolu ve web paneli
 - [ ] **Q4 2026:** Otonom yapay zeka moderasyon botu ve gelişmiş koruma modülleri
 
 ---
@@ -308,8 +303,8 @@ Altyapı      : Docker • Linux CLI • Redis Caching • SOCKS5 Proxy Networks
 </details>
 
 <details>
-  <summary><b>Yeni projeler ne zaman GitHub'a yüklenecek?</b></summary>
-  <p>Projeler yerel testleri ve güvenlik denetimleri tamamlandıkça 2026 yol haritamıza uygun olarak sırasıyla açık kaynak depolara dönüştürülecektir.</p>
+  <summary><b>Yeni depolar ne zaman GitHub'a yüklenecek?</b></summary>
+  <p>Geliştirdiğimiz araçlar yerel testleri ve güvenlik denetimleri tamamlandıkça 2026 yol haritamıza uygun olarak sırasıyla açık kaynak depolara yüklenecektir.</p>
 </details>
 
 ---
